@@ -1,11 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"os"
 
 	"github.com/docherak/bd-blog-aggregator/internal/config"
 )
+
+type state struct {
+	config *config.Config
+}
 
 func main() {
 	cfg, err := config.Read()
@@ -13,16 +17,26 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	err = cfg.SetUser("docherak")
-	if err != nil {
-		log.Fatalf("couldn't set current user: %v", err)
+	s := state{
+		config: &cfg,
 	}
 
-	cfg, err = config.Read()
-	if err != nil {
-		log.Fatalf("error loading updated config: %v", err)
+	cmds := commands{
+		commands: make(map[string]func(*state, command) error),
+	}
+	cmds.register("login", handlerLogin)
+
+	args := os.Args
+	if len(args) < 2 {
+		log.Fatalf("not enough arguments")
+	}
+	cmd := command{
+		name: args[1],
+		args: args[2:],
 	}
 
-	fmt.Printf("%+v", cfg)
-
+	err = cmds.run(&s, cmd)
+	if err != nil {
+		log.Fatalf("error running command '%s': %v", cmd.name, err)
+	}
 }
