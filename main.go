@@ -4,11 +4,16 @@ import (
 	"log"
 	"os"
 
+	"database/sql"
+
 	"github.com/docherak/bd-blog-aggregator/internal/config"
+	"github.com/docherak/bd-blog-aggregator/internal/database"
+	_ "github.com/lib/pq"
 )
 
 type state struct {
 	config *config.Config
+	db     *database.Queries
 }
 
 func main() {
@@ -17,26 +22,35 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	s := state{
+	db, err := sql.Open("postgres", cfg.DbURL)
+	if err != nil {
+		log.Fatalf("error opening database connection: %v", err)
+	}
+
+	dbQueries := database.New(db)
+
+	progState := state{
 		config: &cfg,
+		db:     dbQueries,
 	}
 
 	cmds := commands{
 		commands: make(map[string]func(*state, command) error),
 	}
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	args := os.Args
 	if len(args) < 2 {
 		log.Fatalf("not enough arguments")
 	}
 	cmd := command{
-		name: args[1],
-		args: args[2:],
+		Name: args[1],
+		Args: args[2:],
 	}
 
-	err = cmds.run(&s, cmd)
+	err = cmds.run(&progState, cmd)
 	if err != nil {
-		log.Fatalf("error running command '%s': %v", cmd.name, err)
+		log.Fatalf("error running command '%s': %v", cmd.Name, err)
 	}
 }

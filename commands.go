@@ -1,8 +1,8 @@
 package main
 
 type command struct {
-	name string
-	args []string
+	Name string
+	Args []string
 }
 
 type commands struct {
@@ -10,7 +10,7 @@ type commands struct {
 }
 
 func (c *commands) run(s *state, cmd command) error {
-	if err := c.commands[cmd.name](s, cmd); err != nil {
+	if err := c.commands[cmd.Name](s, cmd); err != nil {
 		return err
 	}
 
