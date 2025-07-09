@@ -10,3 +10,7 @@ VALUES (
 )
 RETURNING *;
 
+-- name: ListFeeds :many
+SELECT sqlc.embed(feeds), sqlc.embed(users)
+FROM feeds
+JOIN users ON users.id = feeds.user_id;
