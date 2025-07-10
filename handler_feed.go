@@ -24,13 +24,26 @@ func handlerAddFeed(s *state, cmd command) error {
 	feedUrl := cmd.Args[1]
 	userID := user.ID
 
-	_, err = s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+	feed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        feedID,
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 		Name:      feedName,
 		Url:       feedUrl,
 		UserID:    userID,
+	})
+	if err != nil {
+		return err
+	}
+
+	ffID := uuid.New()
+
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        ffID,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
 	})
 	if err != nil {
 		return err
