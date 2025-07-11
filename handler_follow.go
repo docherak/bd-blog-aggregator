@@ -9,12 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerListFollows(s *state, cmd command) error {
-
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
-	if err != nil {
-		return err
-	}
+func handlerListFollows(s *state, cmd command, user database.User) error {
 
 	userID := user.ID
 
@@ -31,17 +26,12 @@ func handlerListFollows(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("follow handler expects a feed url argument, usage: %s <feed_url>", cmd.Name)
 	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), cmd.Args[0])
-	if err != nil {
-		return err
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.config.CurrentUserName)
 	if err != nil {
 		return err
 	}
