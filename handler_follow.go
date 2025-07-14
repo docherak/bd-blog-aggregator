@@ -20,7 +20,7 @@ func handlerListFollows(s *state, cmd command, user database.User) error {
 
 	fmt.Printf("Feeds followed by user %s\n", user.Name)
 	for _, ff := range ffs {
-		fmt.Printf("- %s", ff.FeedName)
+		fmt.Printf("- %s\n", ff.FeedName)
 	}
 
 	return nil

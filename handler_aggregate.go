@@ -2,8 +2,14 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
+	"strings"
 	"time"
+
+	"github.com/docherak/bd-blog-aggregator/internal/database"
+	"github.com/google/uuid"
 )
 
 func handlerAggregate(s *state, cmd command) error {
@@ -15,6 +21,8 @@ func handlerAggregate(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("invalid duration: %w", err)
 	}
+
+	log.Printf("Collecting feeds every %s...", requestsDelta)
 
 	ticker := time.NewTicker(requestsDelta)
 
@@ -41,8 +49,36 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, item := range rssFeed.Channel.Item {
-		println(item.Title)
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
+		}
+
+		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+			FeedID:    feed.ID,
+			Title:     item.Title,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			Url:         item.Link,
+			PublishedAt: publishedAt,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			continue
+		}
 	}
+
+	log.Printf("Feed %s collected, %v posts found", feed.Name, len(rssFeed.Channel.Item))
 
 	return nil
 }
